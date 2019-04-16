@@ -1,0 +1,24 @@
+{
+  "name": "twing-loader",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "dev": "webpack --display-error-details"
+  },
+  "keywords": [],
+  "author": "Nicolas REINE",
+  "license": "ISC",
+  "dependencies": {
+    "twing": "^2.2.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/nicolasRdr/twing-loader.git"
+  },
+  "bugs": {
+    "url": "https://github.com/nicolasRdr/twing-loader/issues"
+  },
+  "homepage": "https://github.com/nicolasRdr/twing-loader#readme",
+  "description": ""
+}
