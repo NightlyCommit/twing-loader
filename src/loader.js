@@ -1,11 +1,18 @@
 const twing = require('twing');
+const path = require('path');
 
-module.exports = function loader() {
+module.exports = async function loader() {
+    const loader = new twing.TwingLoaderRelativeFilesystem();
+    const tw = new twing.TwingEnvironment(loader);
+
+    tw.on('template', (tplName, from) => {
+        from = from ? from : {path: ''};
+        let toLoad = path.normalize(path.dirname(from.path) + '/' + tplName);
+        this.addDependency(toLoad);
+    });
+
     try {
-        const loader = new twing.TwingLoaderRelativeFilesystem();
-        const tw = new twing.TwingEnvironment(loader);
-        const html = tw.render(this.resource);
-        return html;
+        return await tw.render(this.resource);
     }
     catch (e) {
         console.log(e);
