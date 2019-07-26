@@ -1,0 +1,10 @@
+*
+!/dist/**
+!/lib/**
+!/browser.d.ts
+!/browser.js
+!/index.d.ts
+!/index.js
+!/LICENSE
+!/CHANGELOG
+!/README.md

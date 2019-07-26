@@ -1,16 +1,26 @@
 {
   "name": "twing-loader",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
-    "test": "jest",
-    "dev": "webpack --display-error-details"
+    "build": "npm run clean && tsc",
+    "clean": "rimraf dist",
+    "test": "npm run build && ts-node node_modules/tape/bin/tape 'test/**/test.ts' | tap-bail | tap-spec",
+    "test:unit": "ts-node node_modules/tape/bin/tape 'test/unit/**/test.ts' | tap-bail | tap-spec",
+    "test:integration": "npm run build && ts-node node_modules/tape/bin/tape 'test/integration/**/test.ts' | tap-bail | tap-spec",
+    "cover": "rimraf .nyc_output coverage && nyc npm run test:unit",
+    "coverage": "nyc report --reporter=text-lcov | coveralls"
   },
-  "keywords": [],
+  "keywords": [
+    "twig",
+    "twing",
+    "webpack",
+    "webpack-loader"
+  ],
   "author": "Nicolas REINE",
   "license": "ISC",
-  "dependencies": {
-    "twing": "^2.2.3"
+  "peerDependencies": {
+    "twing": "^2.3.3"
   },
   "repository": {
     "type": "git",
@@ -20,5 +30,31 @@
     "url": "https://github.com/nicolasRdr/twing-loader/issues"
   },
   "homepage": "https://github.com/nicolasRdr/twing-loader#readme",
-  "description": ""
+  "description": "",
+  "dependencies": {
+    "loader-utils": "^1.2.3",
+    "schema-utils": "^2.0.1"
+  },
+  "devDependencies": {
+    "@types/loader-utils": "^1.1.3",
+    "@types/luxon": "^1.15.2",
+    "@types/memory-fs": "^0.3.2",
+    "@types/schema-utils": "^1.0.0",
+    "@types/sinon": "^7.0.13",
+    "@types/tape": "^4.2.33",
+    "@types/webpack": "^4.32.1",
+    "coveralls": "^3.0.5",
+    "memory-fs": "^0.4.1",
+    "nyc": "^14.1.1",
+    "rimraf": "^2.6.3",
+    "sinon": "^7.3.2",
+    "tap-bail": "^1.0.0",
+    "tap-spec": "^5.0.0",
+    "tape": "^4.11.0",
+    "ts-node": "^8.3.0",
+    "twing": "^2.3.2",
+    "typescript": "^3.5.3",
+    "webpack": "^4.37.0",
+    "webpack-cli": "^3.3.6"
+  }
 }
