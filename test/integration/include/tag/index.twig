@@ -1,0 +1,7 @@
+{% include foo ? './foo.twig' : './bar.twig' %}
+{% include foo ? './foo.twig' : not foo ? 'foo-2.twig' : './bar.twig' %}
+{% include ['./missing.twig', './foo.twig'] %}
+===
+{% include bar ? './foo.twig' : './bar.twig' %}
+{% include bar ? './foo.twig' : not bar ? 'foo-2.twig' : './bar.twig' %}
+{% include ['./missing.twig', './foo.twig'] %}
