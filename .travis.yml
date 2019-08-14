@@ -1,25 +1,16 @@
 language: node_js
 node_js:
-  - 7
-  - 8
-  - 9
-  - 10
+  - "6"
+  - "7"
+  - "8"
+  - "9"
+  - "10"
+  - "11"
+  - "12"
 jobs:
   include:
-    - stage: test & cover
-      node_js: 11
+    - stage: cover
+      node_js: "12"
       script:
         - npm run cover
         - npm run coverage
-    - stage: test in web browser
-      node_js: 11
-      script:
-        - npm run test:browser
-      addons:
-        apt:
-          packages:
-            - xvfb
-      install:
-        - export DISPLAY=':99.0'
-        - Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
-        - npm install

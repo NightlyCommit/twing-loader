@@ -20,7 +20,10 @@ export class TestSuite {
             }
 
             return Promise.all(promises)
-                .finally(() => {
+                .then(() => {
+                    test.end();
+                })
+                .catch(() => {
                     test.end();
                 })
         });

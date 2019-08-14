@@ -24,6 +24,11 @@
       "name": "Eric MORAND",
       "email": "eric.morand@gmail.com",
       "url": "https://github.com/ericmorand"
+    },
+    {
+      "name": "Derek ROTH",
+      "email": "derek.roth@protonmail.ch",
+      "url": "https://github.com/DerekRoth"
     }
   ],
   "license": "ISC",
@@ -32,12 +37,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/nicolasRdr/twing-loader.git"
+    "url": "https://github.com/NightlyCommit/twing-loader"
   },
   "bugs": {
-    "url": "https://github.com/nicolasRdr/twing-loader/issues"
+    "url": "https://github.com/NightlyCommit/twing-loader/issues"
   },
-  "homepage": "https://github.com/nicolasRdr/twing-loader#readme",
+  "homepage": "https://github.com/NightlyCommit/twing-loader#readme",
   "description": "",
   "dependencies": {
     "crypto-js": "^3.1.9-1",
