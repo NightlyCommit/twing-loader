@@ -17,48 +17,14 @@ const loaderContext = {
     resourcePath: resolvePath('test/unit/fixtures/index.twig')
 };
 
-const escapePattern = (pattern: string): string => {
-    return pattern.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
-};
-
 tape('loader', (test: Test) => {
     let environment: TwingEnvironment = require(loaderContext.query.environmentModulePath);
 
     let spy = sinon.spy(environment, 'addNodeVisitor');
 
-    let actual: string = loader.bind(loaderContext)('{% embed "./bar.twig" %}{% endembed %}');
+    loader.bind(loaderContext)('{% embed "./bar.twig" %}{% endembed %}');
 
     test.same(dependencies, [resolvePath('test/unit/fixtures/environment.js')], 'declares the environment module as a dependency');
-
-    let pattern =
-        escapePattern(`const {cache, loader, getEnvironment} = require('${resolvePath('src/runtime.ts')}');
-const env = getEnvironment(require('${resolvePath('test/unit/fixtures/environment.js')}'));
-cache.write('`)
-        + '__HASHED__(.*)'
-        + escapePattern(`', (() => {let module = {
-    exports: undefined
-};
-
-`)
-        + '(.*)'
-        + escapePattern(`
-
-return module.exports;})());
-
-loader.addTemplateKey('`)
-        + '__HASHED__(.*)\', \'__HASHED__(.*)'
-        + escapePattern(`');
-require('${resolvePath('test/unit/fixtures/bar.twig')}');
-
-let template = env.loadTemplate('`)
-        + '__HASHED__(.*)'
-        + escapePattern(`');
-
-module.exports = function(context = {}) {
-    return template.render(context);
-};`);
-
-    test.true(actual.match(new RegExp(pattern, 's')), 'outputs a valid module');
 
     loader.bind(loaderContext)('');
 

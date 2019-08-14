@@ -143,7 +143,7 @@ This second behavior, known as _render at compile time_, comes with the benefit 
 
 [npm-image]: https://badge.fury.io/js/twing-loader.svg
 [npm-url]: https://npmjs.org/package/twing-loader
-[travis-image]: https://travis-ci.org/nicolasRdr/twing-loader.svg?branch=master
-[travis-url]: https://travis-ci.org/nicolasRdr/twing-loader
-[coveralls-image]: https://coveralls.io/repos/github/nicolasRdr/twing-loader/badge.svg
-[coveralls-url]: https://coveralls.io/github/nicolasRdr/twing-loader
+[travis-image]: https://travis-ci.com/NightlyCommit/twing-loader.svg?branch=master
+[travis-url]: https://travis-ci.com/NightlyCommit/twing-loader
+[coveralls-image]: https://coveralls.io/repos/github/NightlyCommit/twing-loader/badge.svg
+[coveralls-url]: https://coveralls.io/github/NightlyCommit/twing-loader
