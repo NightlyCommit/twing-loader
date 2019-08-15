@@ -49,5 +49,81 @@ tape('loader', (test: Test) => {
         test.end();
     });
 
+    test.test('provides options validation', (test) => {
+        type ValidationError = {
+            dataPath: string,
+            keyword: string,
+            message: string
+        };
+
+        type Fixture = {
+            options: any,
+            expectation: ValidationError
+        };
+
+        let fixtures: Fixture[] = [
+            {
+                options: {},
+                expectation: {
+                    dataPath: '',
+                    keyword: 'required',
+                    message: 'should have required property \'environmentModulePath\''
+                }
+            },
+            {
+                options: {
+                    environmentModulePath: {}
+                },
+                expectation: {
+                    dataPath: '.environmentModulePath',
+                    keyword: 'type',
+                    message: 'should be string'
+                }
+            },
+            {
+                options: {
+                    environmentModulePath: '',
+                    renderContext: ''
+                },
+                expectation: {
+                    dataPath: '.renderContext',
+                    keyword: 'type',
+                    message: 'should be object'
+                }
+            },
+            {
+                options: {
+                    environmentModulePath: '',
+                    foo: ''
+                },
+                expectation: {
+                    dataPath: '',
+                    keyword: 'additionalProperties',
+                    message: 'should NOT have additional properties'
+                }
+            }
+        ];
+
+        for (let fixture of fixtures) {
+            let errors: ValidationError[];
+
+            try {
+                loader.bind({
+                    query: fixture.options
+                })();
+
+                errors = [];
+            } catch (e) {
+                errors = e.errors;
+            }
+
+            test.same(errors[0].dataPath, fixture.expectation.dataPath);
+            test.same(errors[0].keyword, fixture.expectation.keyword);
+            test.same(errors[0].message, fixture.expectation.message);
+        }
+
+        test.end();
+    });
+
     test.end();
 });
