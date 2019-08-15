@@ -20,7 +20,8 @@ const optionsSchema = {
     },
     required: [
         'environmentModulePath'
-    ]
+    ],
+    additionalProperties: false
 };
 
 class PathSupportingArrayLoader extends TwingLoaderArray {
