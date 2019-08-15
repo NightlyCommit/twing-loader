@@ -1,7 +1,7 @@
-# Twing loader
+# twing-loader
 [![NPM version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url] [![Coverage percentage][coveralls-image]][coveralls-url]
 
-Webpack loader that compiles Twig templates with [Twing](https://www.npmjs.com/package/twing).
+Webpack loader that compiles Twig templates using [Twing](https://www.npmjs.com/package/twing).
 
 ## Prerequisites
 
@@ -20,7 +20,7 @@ twing-loader comes with two available behaviors. Depending on your need, you can
 
 By default, twing-loader transforms a Twig template to a function that, when called with some optional data, renders the template:
 
-> webpack.config.js
+<sub>webpack.config.js</sub>
 
 ```javascript
 module.exports = {
@@ -44,7 +44,7 @@ module.exports = {
 }
 ```
 
-> environment.js
+<sub>environment.js</sub>
 
 ```javascript
 const {TwingEnvironment, TwingLoaderRelativeFilesystem} = require("twing");
@@ -54,13 +54,13 @@ module.exports = new TwingEnvironment(
 );
 ```
 
-> index.twig
+<sub>index.twig</sub>
 
 ```twig
 {{ foo }}
 ```
 
-> index.js
+<sub>index.js</sub>
 
 ```javascript
 let template = require('./index.twig');
@@ -70,13 +70,13 @@ let renderedTemplate = template({
 }); // "bar"
 ```
 
-This behavior, known as _render at runtime_, comes at the price of having Twing as part of the bundle.
+This behavior, known as _render at runtime_, comes at the cost of having Twing as part of the bundle.
 
 ### Render at compile time
 
 When `renderContext` is _defined_, twing-loader transforms a Twig template to the result of the template rendering:
 
-> webpack.config.js
+<sub>webpack.config.js</sub>
 
 ```javascript
 module.exports = {
@@ -103,7 +103,7 @@ module.exports = {
 }
 ```
 
-> environment.js
+<sub>environment.js</sub>
 
 ```javascript
 const {TwingEnvironment, TwingLoaderRelativeFilesystem} = require("twing");
@@ -113,13 +113,13 @@ module.exports = new TwingEnvironment(
 );
 ```
 
-> index.twig
+<sub>index.twig</sub>
 
 ```twig
 {{ foo }}
 ```
 
-> index.js
+<sub>index.js</sub>
 
 ```javascript
 let renderedTemplate = require('./index.twig'); // "bar"
@@ -131,7 +131,7 @@ This second behavior, known as _render at compile time_, comes with the benefit 
 
 |Name|Required|Type|Default|Description|
 |---|:---:|:---:|:---:|---|
-|environmentModulePath|`true`|string|`undefined`| A path to the module that exports the `TwingEnvironment` instance that will be used by the loader to compile (and render) the templates at compile-time and by the bundle to render them at runtime.|
+|environmentModulePath|`true`|string|`undefined`| A path to the module that exports the `TwingEnvironment` instance that will be used by the loader to compile (and render) the templates at compile time and by the bundle to render them at runtime.|
 |renderContext|`false`|any|`undefined`|If different from `undefined`, enables the _render at compile time_ behavior and serves as context for the rendering of the templates.|
 
 ## Contributing
