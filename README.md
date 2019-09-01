@@ -34,7 +34,7 @@ module.exports = {
                     {
                         loader: 'twing-loader',
                         options: {
-                            environmentModulePath: 'environment.js'
+                            environmentModulePath: require.resolve('./environment.js')
                         }
                     }
                 ]
@@ -90,7 +90,7 @@ module.exports = {
                     {
                         loader: 'twing-loader',
                         options: {
-                            environmentModulePath: 'environment.js',
+                            environmentModulePath: require.resolve('./environment.js'),
                             renderContext: {
                                 foo: 'bar'
                             }
@@ -131,7 +131,7 @@ This second behavior, known as _render at compile time_, comes with the benefit 
 
 |Name|Required|Type|Default|Description|
 |---|:---:|:---:|:---:|---|
-|environmentModulePath|`true`|string|`undefined`| A path to the module that exports the `TwingEnvironment` instance that will be used by the loader to compile (and render) the templates at compile time and by the bundle to render them at runtime.|
+|environmentModulePath|`true`|string|`undefined`| The absolute path or the identifier to the module that exports the `TwingEnvironment` instance that will be used by the loader to compile (and render) the templates at compile time and in the bundle to render them at runtime.|
 |renderContext|`false`|any|`undefined`|If different from `undefined`, enables the _render at compile time_ behavior and serves as context for the rendering of the templates.|
 
 ## Contributing
