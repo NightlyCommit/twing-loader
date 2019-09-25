@@ -5,6 +5,7 @@ import {NodeVisitor} from "./node-visitor";
 
 const sha256 = require('crypto-js/sha256');
 const hex = require('crypto-js/enc-hex');
+const slash = require('slash');
 
 const validateOptions = require('schema-utils');
 
@@ -37,7 +38,8 @@ export default function (this: loader.LoaderContext, source: string) {
 
     validateOptions(optionsSchema, options, 'Twing loader');
 
-    let environmentModulePath: string = options.environmentModulePath;
+    let resourcePath: string = slash(this.resourcePath);
+    let environmentModulePath: string = slash(options.environmentModulePath);
     let renderContext: any = options.renderContext;
 
     this.addDependency(environmentModulePath);
@@ -49,14 +51,14 @@ export default function (this: loader.LoaderContext, source: string) {
 
     if (renderContext === undefined) {
         let parts: string[] = [
-            `const {cache, loader, getEnvironment} = require('${require.resolve('./runtime')}');`,
+            `const {cache, loader, getEnvironment} = require('${slash(require.resolve('./runtime'))}');`,
             `const env = getEnvironment(require('${environmentModulePath}'));`
         ];
 
         let nodeVisitor: NodeVisitor;
 
         nodeVisitor = new NodeVisitor();
-        nodeVisitor.fromPath = this.resourcePath;
+        nodeVisitor.fromPath = resourcePath;
 
         environment.addNodeVisitor(nodeVisitor);
 
@@ -74,7 +76,7 @@ export default function (this: loader.LoaderContext, source: string) {
             return hash + (index === null ? '' : '_' + index);
         });
 
-        let className: string = environment.getTemplateClass(this.resourcePath);
+        let className: string = environment.getTemplateClass(resourcePath);
         let sourceContext: TwingSource = new TwingSource(source, className);
         let precompiledTemplate = environment.compile(environment.parse(environment.tokenize(sourceContext)));
 
@@ -103,7 +105,7 @@ module.exports = function(context = {}) {
     } else {
         environment.setLoader(new TwingLoaderChain([
             new PathSupportingArrayLoader(new Map([
-                [this.resourcePath, source]
+                [resourcePath, source]
             ])),
             environment.getLoader()
         ]));
@@ -112,6 +114,6 @@ module.exports = function(context = {}) {
             this.addDependency(environment.getLoader().resolve(name, from));
         });
 
-        return `module.exports = ${JSON.stringify(environment.render(this.resourcePath, renderContext))};`;
+        return `module.exports = ${JSON.stringify(environment.render(resourcePath, renderContext))};`;
     }
 };
