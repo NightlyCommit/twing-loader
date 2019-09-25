@@ -5,6 +5,8 @@ import {NodeVisitor} from "./node-visitor";
 
 const sha256 = require('crypto-js/sha256');
 const hex = require('crypto-js/enc-hex');
+const process = require('process');
+const slash = require('slash');
 
 const validateOptions = require('schema-utils');
 
@@ -48,8 +50,14 @@ export default function (this: loader.LoaderContext, source: string) {
     let environment: TwingEnvironment = require(environmentModulePath);
 
     if (renderContext === undefined) {
+        let runtimePath = require.resolve('./runtime');
+        if (process.platform === 'win32') {
+            environmentModulePath = slash(environmentModulePath);
+            runtimePath = slash(runtimePath);
+        }
+
         let parts: string[] = [
-            `const {cache, loader, getEnvironment} = require('${require.resolve('./runtime')}');`,
+            `const {cache, loader, getEnvironment} = require('${runtimePath}');`,
             `const env = getEnvironment(require('${environmentModulePath}'));`
         ];
 
@@ -89,6 +97,9 @@ return module.exports;})());
         parts.push(`loader.addTemplateKey('${className}', '${className}');`);
 
         for (let foundTemplateName of nodeVisitor.foundTemplateNames) {
+            if (process.platform === 'win32') {
+                foundTemplateName = slash(foundTemplateName);
+            }
             parts.push(`require('${foundTemplateName}');`);
         }
 
