@@ -1,12 +1,12 @@
 # twing-loader
 [![NPM version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url] [![Coverage percentage][coveralls-image]][coveralls-url]
 
-Webpack loader that compiles Twig templates using [Twing](https://www.npmjs.com/package/twing).
+Webpack loader for Twig templates, based on [Twing](https://www.npmjs.com/package/twing).
 
 ## Prerequisites
 
 * Webpack 4
-* Twing 2.3.3
+* Twing 3.0.1
 
 ## Installation
 

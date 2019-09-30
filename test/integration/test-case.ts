@@ -1,6 +1,5 @@
 import {resolve as resolvePath, relative as relativePath} from 'path';
 
-import * as tape from 'tape';
 import {Test} from "tape";
 import * as webpack from "webpack";
 import {Compiler} from "webpack";

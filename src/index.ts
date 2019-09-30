@@ -1,11 +1,16 @@
 import {getOptions} from 'loader-utils';
 import {loader} from 'webpack';
-import {TwingEnvironment, TwingLoaderArray, TwingLoaderChain, TwingSource} from 'twing';
-import {NodeVisitor} from "./node-visitor";
+import {
+    TwingEnvironment,
+    TwingLoaderArray,
+    TwingLoaderChain,
+    TwingNodeModule,
+    TwingSource, TwingTokenStream
+} from 'twing';
+import {Visitor} from "./visitor";
 
 const sha256 = require('crypto-js/sha256');
 const hex = require('crypto-js/enc-hex');
-const process = require('process');
 const slash = require('slash');
 
 const validateOptions = require('schema-utils');
@@ -27,82 +32,71 @@ const optionsSchema = {
 };
 
 class PathSupportingArrayLoader extends TwingLoaderArray {
-    getSourceContext(name: string): TwingSource {
-        let source = super.getSourceContext(name);
+    getSourceContext(name: string, from: TwingSource): TwingSource {
+        let source = super.getSourceContext(name, from);
 
         return new TwingSource(source.getCode(), source.getName(), name);
     }
 }
 
 export default function (this: loader.LoaderContext, source: string) {
+    const getTemplateHash = (name: string) => {
+        return this.mode !== 'production' ? name : hex.stringify(sha256(name));
+    };
+
     const options = getOptions(this);
 
     validateOptions(optionsSchema, options, 'Twing loader');
 
     let resourcePath: string = slash(this.resourcePath);
-    let environmentModulePath: string = slash(options.environmentModulePath);
+    let environmentModulePath: string = options.environmentModulePath;
     let renderContext: any = options.renderContext;
 
-    this.addDependency(environmentModulePath);
+    this.addDependency(slash(environmentModulePath));
 
-    // we don't want to reuse an eventual initialized environment
-    delete require.cache[require.resolve(environmentModulePath)];
-
-    let environment: TwingEnvironment = require(environmentModulePath);
+    // require takes module name separated wicth forward slashes
+    let environment: TwingEnvironment = require(slash(environmentModulePath));
+    let loader = environment.getLoader();
 
     if (renderContext === undefined) {
-
         let parts: string[] = [
-            `const {cache, loader, getEnvironment} = require('${slash(require.resolve('./runtime'))}');`,
-            `const env = getEnvironment(require('${environmentModulePath}'));`
+            `const env = require('${slash(environmentModulePath)}');`
         ];
 
-        let nodeVisitor: NodeVisitor;
+        let key = getTemplateHash(resourcePath);
+        let sourceContext: TwingSource = new TwingSource(source, `${key}`);
+        let tokenStream: TwingTokenStream = environment.tokenize(sourceContext);
 
-        nodeVisitor = new NodeVisitor();
-        nodeVisitor.fromPath = resourcePath;
+        let module: TwingNodeModule = environment.parse(tokenStream);
 
-        environment.addNodeVisitor(nodeVisitor);
+        let visitor = new Visitor(loader, resourcePath, getTemplateHash);
 
-        Reflect.set(environment, 'getTemplateClass', function (name: string, index: number = null, from: TwingSource = null) {
-            let hash: string;
+        visitor.visit(module);
 
-            const HASH_PREFIX = '__HASHED__';
+        let precompiledTemplate = environment.compile(module);
 
-            if (name.startsWith(HASH_PREFIX)) {
-                hash = name;
-            } else {
-                hash = `${HASH_PREFIX}${hex.stringify(sha256(name))}`;
-            }
-
-            return hash + (index === null ? '' : '_' + index);
-        });
-
-        let className: string = environment.getTemplateClass(resourcePath);
-        let sourceContext: TwingSource = new TwingSource(source, className);
-        let precompiledTemplate = environment.compile(environment.parse(environment.tokenize(sourceContext)));
-
-        parts.push(`cache.write('${className}', (() => {let module = {
+        parts.push(`let templatesModule = (() => {
+let module = {
     exports: undefined
 };
 
 ${precompiledTemplate}
 
-return module.exports;})());
+    return module.exports;
+})();
 `);
-        parts.push(`loader.addTemplateKey('${className}', '${className}');`);
 
-        for (let foundTemplateName of nodeVisitor.foundTemplateNames) {
-            if (process.platform === 'win32') {
-                foundTemplateName = slash(foundTemplateName);
-            }
-            parts.push(`require('${foundTemplateName}');`);
+        for (let foundTemplateName of visitor.foundTemplateNames) {
+            // require takes module name separated with forward slashes
+            parts.push(`require('${slash(foundTemplateName)}');`);
         }
 
-        parts.push(`
-let template = env.loadTemplate('${className}');
+        parts.push(`env.registerTemplatesModule(templatesModule, '${key}');`);
 
-module.exports = function(context = {}) {
+        parts.push(`
+let template = env.loadTemplate('${key}');
+
+module.exports = (context = {}) => {
     return template.render(context);
 };`);
 
@@ -112,7 +106,7 @@ module.exports = function(context = {}) {
             new PathSupportingArrayLoader(new Map([
                 [resourcePath, source]
             ])),
-            environment.getLoader()
+            loader
         ]));
 
         environment.on('template', (name: string, from: TwingSource) => {

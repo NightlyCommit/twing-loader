@@ -14,7 +14,7 @@ BAR`;
 
 (new TestSuite('embed tag', [
     new EmbedTestCase(),
-    new EmbedTestCase({
-        foo: 'BAR'
-    })
+    // new EmbedTestCase({
+    //     foo: 'BAR'
+    // })
 ])).run();
