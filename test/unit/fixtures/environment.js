@@ -1,7 +1,5 @@
-const {TwingEnvironment, TwingLoaderRelativeFilesystem, TwingLoaderChain} = require("twing");
+const {TwingEnvironment, TwingLoaderRelativeFilesystem} = require("twing");
 
 module.exports = new TwingEnvironment(
-    new TwingLoaderChain([
-        new TwingLoaderRelativeFilesystem()
-    ])
+    new TwingLoaderRelativeFilesystem()
 );
