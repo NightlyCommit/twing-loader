@@ -1,5 +1,5 @@
-import {TwingLoaderInterface, TwingNode, TwingNodeExpression, TwingNodeType, TwingSource} from "twing";
-import {existsSync} from "fs";
+import {TwingLoaderInterface, TwingNode, TwingNodeExpression, TwingSource} from 'twing';
+import {existsSync} from 'fs';
 
 const slash = require('slash');
 
@@ -20,12 +20,15 @@ export class Visitor {
         return this._foundTemplateNames;
     }
 
-    visit(node: TwingNode) {
-        let processExpressionNode = (node: TwingNodeExpression) => {
-            let pushValue = (value: string): string => {
-                if (this._loader.exists(value, this._from)) {
-                    value = this._loader.resolve(value, this._from);
+    async visit(node: TwingNode) {
+        const processExpressionNode = async (node: TwingNodeExpression) => {
+            if (node.type === null) {
+                return;
+            }
 
+            const pushValue = async (value: string): Promise<string> => {
+                if (await this._loader.exists(value, this._from)) {
+                    value = await this._loader.resolve(value, this._from);
                     if (existsSync(value)) {
                         if (!this._foundTemplateNames.includes(value)) {
                             this._foundTemplateNames.push(value);
@@ -38,52 +41,54 @@ export class Visitor {
                 return value;
             };
 
-            if (node.getType() === TwingNodeType.EXPRESSION_ARRAY) {
+            if (node.type.toString() === 'expression_array') {
                 for (let [index, constantNode] of node.getNodes()) {
                     if ((index as number) % 2) {
-                        processExpressionNode(constantNode);
+                        await processExpressionNode(constantNode);
                     }
                 }
             }
 
-            if (node.getType() === TwingNodeType.EXPRESSION_CONDITIONAL) {
+            if (node.type.toString() === 'expression_conditional') {
                 let expr2: TwingNodeExpression = node.getNode('expr2');
                 let expr3: TwingNodeExpression = node.getNode('expr3');
 
-                processExpressionNode(expr2);
-                processExpressionNode(expr3);
+                await processExpressionNode(expr2);
+                await processExpressionNode(expr3);
             }
 
-            if (node.getType() === TwingNodeType.EXPRESSION_CONSTANT) {
-                node.setAttribute('value', pushValue(node.getAttribute('value')));
+            if (node.type.toString() === 'expression_constant') {
+                node.setAttribute('value', await pushValue(node.getAttribute('value')));
             }
         };
 
-        // include function
-        if ((node.getType() === TwingNodeType.EXPRESSION_FUNCTION) && (node.getAttribute('name') === 'include')) {
-            processExpressionNode(node.getNode('arguments').getNode(0));
-        }
-
-        // import and include tags
-        if ((node.getType() === TwingNodeType.IMPORT) || (node.getType() === TwingNodeType.INCLUDE)) {
-            if (node.hasNode('expr')) {
-                processExpressionNode(node.getNode('expr'));
-            }
-        }
-
-        // extends and embed tags
-        if ((node.getType() === TwingNodeType.MODULE)) {
-            if (node.hasNode('parent')) {
-                processExpressionNode(node.getNode('parent'))
+        if (node.type !== null) {
+            // include function
+            if ((node.type.toString() === 'expression_function') && (node.getAttribute('name') === 'include')) {
+                await processExpressionNode(node.getNode('arguments').getNode(0));
             }
 
-            for (let embeddedTemplate of node.getAttribute('embedded_templates')) {
-                this.visit(embeddedTemplate);
+            // import and include tags
+            if ((node.type.toString() === 'import') || (node.type.toString() === 'include')) {
+                if (node.hasNode('expr')) {
+                    await processExpressionNode(node.getNode('expr'));
+                }
+            }
+
+            // extends and embed tags
+            if ((node.type.toString() === 'module')) {
+                if (node.hasNode('parent')) {
+                    await processExpressionNode(node.getNode('parent'))
+                }
+
+                for (let embeddedTemplate of node.getAttribute('embedded_templates')) {
+                    await this.visit(embeddedTemplate);
+                }
             }
         }
 
         for (let [key, subNode] of node.getNodes()) {
-            this.visit(subNode);
+            await this.visit(subNode);
         }
     };
 }

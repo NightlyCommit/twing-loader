@@ -2,7 +2,7 @@ import {resolve as resolvePath, relative as relativePath} from 'path';
 
 import {Test} from "tape";
 import * as webpack from "webpack";
-import {Compiler} from "webpack";
+import {Compiler, Stats} from "webpack";
 import {Configuration} from "webpack";
 import MemoryFileSystem = require("memory-fs");
 
@@ -59,15 +59,15 @@ export abstract class TestCase {
             compiler.outputFileSystem = memoryFs;
 
             compiler.run((err, stats) => {
-                if (err || stats.hasErrors()) {
-                    if (err) {
-                        reject(err);
-                    } else {
-                        reject(new Error(stats.toJson("errors-only").errors.join('')));
-                    }
-                } else {
-                    resolve(memoryFs);
+                if (err) {
+                    return reject(err);
                 }
+
+                if (stats.hasErrors()) {
+                    return reject(new Error(stats.toJson("errors-only").errors.join('')));
+                }
+
+                resolve(memoryFs);
             });
         });
     }
@@ -79,18 +79,28 @@ export abstract class TestCase {
 
         return this.compile(configuration, test)
             .then((memoryFs: MemoryFileSystem) => {
-                this.doTest(test, this.renderContext ? 'using "render at compile time" behavior' : 'using "render at runtime" behavior', memoryFs);
+                return new Promise<void>((resolve) =>
+                  resolve(this.doTest(
+                    test,
+                    this.renderContext ? 'using "render at compile time" behavior' : 'using "render at runtime" behavior',
+                    memoryFs
+                  ))
+                );
             })
             .catch((err) => {
                 test.fail(err.message);
             });
     }
 
-    protected doTest(test: Test, message: string, memoryFs: MemoryFileSystem): void {
-        let actual: string;
+    protected doTest(test: Test, message: string, memoryFs: MemoryFileSystem): void|Promise<void> {
+        let result: string|Promise<string>;
+        const source = memoryFs.readFileSync(resolvePath('dist/main.js'), 'UTF-8');
 
-        actual = new Function(`return ${memoryFs.readFileSync(resolvePath('dist/main.js'), 'UTF-8')};`)();
-
-        test.same(actual, this.expected, message);
+        result = new Function(`return ${source};`)()
+        if (result instanceof Promise) {
+            return result.then((code: string) => test.same(code, this.expected, message));
+        } else {
+            test.same(result, this.expected, message);
+        }
     }
 }

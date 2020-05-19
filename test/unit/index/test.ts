@@ -6,7 +6,7 @@ import {TwingTemplate} from "twing";
 import {OptionObject} from 'loader-utils';
 import {readFileSync} from 'fs';
 
-tape('loader', (test: Test) => {
+tape('loader', async (test: Test) => {
     let dependencies: string[] = [];
 
     const loaderContext: OptionObject = {
@@ -16,14 +16,18 @@ tape('loader', (test: Test) => {
         addDependency(file: string): void {
             dependencies.push(file);
         },
+        async(): CallableFunction {
+            return (err: null, content: string) => {}
+        },
         resourcePath: resolvePath('test/unit/fixtures/index.twig')
     };
 
-    loader.bind(loaderContext)('{% embed "./bar.twig" %}{% endembed %}');
+    await loader.bind(loaderContext)('{% embed "./bar.twig" %}{% endembed %}');
 
     test.same(dependencies, [resolvePath('test/unit/fixtures/environment.js')], 'declares the environment module as a dependency');
 
-    test.test('handles "render at compile time" mode', (test) => {
+    test.test('handles "render at compile time" mode', async (test) => {
+        let actual: string = ''
         let renderLoaderContext: any = {
             query: {
                 environmentModulePath: loaderContext.query.environmentModulePath,
@@ -32,17 +36,22 @@ tape('loader', (test: Test) => {
                 }
             },
             resourcePath: loaderContext.resourcePath,
-            addDependency: loaderContext.addDependency
+            addDependency: loaderContext.addDependency,
+            async(): CallableFunction {
+                return (err: null, content: string) => {
+                    actual = content
+                }
+            },
         };
 
-        let actual: string = loader.bind(renderLoaderContext)('{% embed "./bar.twig" %}{% endembed %}{{bar}}');
+        await loader.bind(renderLoaderContext)('{% embed "./bar.twig" %}{% endembed %}{{bar}}');
 
         test.same(actual, 'module.exports = "    FOO\\nBAR";');
 
         test.end();
     });
 
-    test.test('provides options validation', (test) => {
+    test.test('provides options validation', async (test) => {
         type ValidationError = {
             dataPath: string,
             keyword: string,
@@ -101,7 +110,8 @@ tape('loader', (test: Test) => {
             let errors: ValidationError[];
 
             try {
-                loader.bind({
+                await loader.bind({
+                    async: loaderContext.async,
                     query: fixture.options
                 })();
 
@@ -118,20 +128,28 @@ tape('loader', (test: Test) => {
         test.end();
     });
 
-    test.test('anonymize template names when mode is set to "production"', (test) => {
+    test.test('anonymize template names when mode is set to "production"', async (test) => {
+        let actual: string = '';
         let context: OptionObject = Object.assign({}, loaderContext, {
-            mode: 'production'
+            mode: 'production',
+            async(): CallableFunction {
+                return (err: null, content: string) => {
+                    actual = content
+                }
+            },
         });
 
         delete require.cache[context.query.environmentModulePath];
 
-        let template: TwingTemplate = new Function('require', `module = { exports: null };
+        await loader.bind(context)('foo')
 
-${loader.bind(context)('foo')}
+        let template: TwingTemplate = await new Function('require', `module = { exports: null };
 
-return template;`)(require);
+${actual}
 
-        test.false(template.getTemplateName().includes('test/unit/fixtures/index.twig'));
+return loadTemplate();`)(require);
+
+        test.false(template.templateName.includes('test/unit/fixtures/index.twig'));
 
         test.end();
     });
