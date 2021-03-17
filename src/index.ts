@@ -65,15 +65,23 @@ export default function (this: loader.LoaderContext, source: string) {
 
         let key = getTemplateHash(resourcePath);
         let sourceContext: TwingSource = new TwingSource(source, `${key}`);
-        let tokenStream: TwingTokenStream = environment.tokenize(sourceContext);
 
-        let module: TwingNodeModule = environment.parse(tokenStream);
+        let tokenStream: TwingTokenStream;
+        let nodeModule: TwingNodeModule;
+
+        try {
+            tokenStream = environment.tokenize(sourceContext);
+            nodeModule = environment.parse(tokenStream);
+        } catch (err) {
+            this.callback(err);
+            return null;
+        }
 
         let visitor = new Visitor(loader, resourcePath, getTemplateHash);
 
-        visitor.visit(module);
+        visitor.visit(nodeModule);
 
-        let precompiledTemplate = environment.compile(module);
+        let precompiledTemplate = environment.compile(nodeModule);
 
         parts.push(`let templatesModule = (() => {
 let module = {
