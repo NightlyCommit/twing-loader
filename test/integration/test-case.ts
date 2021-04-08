@@ -1,4 +1,4 @@
-import {resolve as resolvePath, relative as relativePath} from 'path';
+import {resolve as resolvePath} from 'path';
 
 import {Test} from "tape";
 import * as webpack from "webpack";
@@ -79,17 +79,17 @@ export abstract class TestCase {
 
         return this.compile(configuration, test)
             .then((memoryFs: MemoryFileSystem) => {
-                this.doTest(test, this.renderContext ? 'using "render at compile time" behavior' : 'using "render at runtime" behavior', memoryFs);
+                return this.doTest(test, this.renderContext ? 'using "render at compile time" behavior' : 'using "render at runtime" behavior', memoryFs);
             })
             .catch((err) => {
                 test.fail(err.message);
             });
     }
 
-    protected doTest(test: Test, message: string, memoryFs: MemoryFileSystem): void {
+    protected async doTest(test: Test, message: string, memoryFs: MemoryFileSystem): Promise<void> {
         let actual: string;
 
-        actual = new Function(`return ${memoryFs.readFileSync(resolvePath('dist/main.js'), 'UTF-8')};`)();
+        actual = await new Function(`return ${memoryFs.readFileSync(resolvePath('dist/main.js'), 'UTF-8')};`)();
 
         test.same(actual, this.expected, message);
     }

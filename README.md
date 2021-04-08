@@ -6,7 +6,7 @@ Webpack loader for Twig templates, based on [Twing](https://www.npmjs.com/packag
 ## Prerequisites
 
 * Webpack 4
-* Twing 3.0.1
+* Twing 5.0.2
 
 ## Installation
 
@@ -65,9 +65,11 @@ module.exports = new TwingEnvironment(
 ```javascript
 let template = require('./index.twig');
 
-let renderedTemplate = template({
+template({
     foo: 'bar'
-}); // "bar"
+}).then((renderedTemplate) => {
+    // "bar" 
+});
 ```
 
 This behavior, known as _render at runtime_, comes at the cost of having Twing as part of the bundle.
@@ -122,7 +124,9 @@ module.exports = new TwingEnvironment(
 <sub>index.js</sub>
 
 ```javascript
-let renderedTemplate = require('./index.twig'); // "bar"
+require('./index.twig').then((renderedTemplate) => {
+    // "bar"
+});
 ```
 
 This second behavior, known as _render at compile time_, comes with the benefit of not having Twing as part of the bundle.

@@ -4,42 +4,79 @@ import {default as loader} from "../../../src";
 import {resolve as resolvePath} from "path";
 import {TwingTemplate} from "twing";
 import {OptionObject} from 'loader-utils';
-import {readFileSync} from 'fs';
 
 tape('loader', (test: Test) => {
-    let dependencies: string[] = [];
+    test.test('exposes the expected dependencies', (test) => {
+        const dependencies: string[] = [];
 
-    const loaderContext: OptionObject = {
-        query: {
-            environmentModulePath: resolvePath('test/unit/fixtures/environment.js')
-        },
-        addDependency(file: string): void {
-            dependencies.push(file);
-        },
-        resourcePath: resolvePath('test/unit/fixtures/index.twig')
-    };
-
-    loader.bind(loaderContext)('{% embed "./bar.twig" %}{% endembed %}');
-
-    test.same(dependencies, [resolvePath('test/unit/fixtures/environment.js')], 'declares the environment module as a dependency');
-
-    test.test('handles "render at compile time" mode', (test) => {
-        let renderLoaderContext: any = {
+        const loaderContext: OptionObject = {
             query: {
-                environmentModulePath: loaderContext.query.environmentModulePath,
-                renderContext: {
-                    bar: 'BAR'
+                environmentModulePath: resolvePath('test/unit/fixtures/environment.js')
+            },
+            addDependency(file: string): void {
+                if (!dependencies.includes(file)) {
+                    dependencies.push(file);
                 }
             },
-            resourcePath: loaderContext.resourcePath,
-            addDependency: loaderContext.addDependency
+            resourcePath: resolvePath('test/unit/fixtures/index.twig'),
+            async: () => {
+                return () => {
+                    test.same(dependencies, [
+                        resolvePath('test/unit/fixtures/environment.js')
+                    ], 'declares the environment module as a dependency');
+
+                    test.end();
+                }
+            }
         };
 
-        let actual: string = loader.bind(renderLoaderContext)('{% embed "./bar.twig" %}{% endembed %}{{bar}}');
+        loader.bind(loaderContext)('{% embed "./bar.twig" %}{% endembed %}');
+    });
 
-        test.same(actual, 'module.exports = "    FOO\\nBAR";');
+    test.test('handles "render at compile time" mode', (test) => {
+        test.test('when everything goes fine', (test) => {
+            const loaderContext: OptionObject = {
+                query: {
+                    environmentModulePath: resolvePath('test/unit/fixtures/environment.js'),
+                    renderContext: {
+                        bar: 'BAR'
+                    }
+                },
+                addDependency(): void {},
+                resourcePath: resolvePath('test/unit/fixtures/index.twig'),
+                async: () => {
+                    return (error: Error | undefined, value: Buffer | string) => {
+                        test.same(value.toString(), 'module.exports = "    FOO\\nBAR";');
 
-        test.end();
+                        test.end();
+                    }
+                }
+            };
+
+            loader.bind(loaderContext)('{% embed "./bar.twig" %}{% endembed %}{{bar}}');
+        });
+
+        test.test('when something goes wrong', (test) => {
+            const loaderContext: OptionObject = {
+                query: {
+                    environmentModulePath: resolvePath('test/unit/fixtures/environment.js'),
+                    renderContext: {
+                        bar: 'BAR'
+                    }
+                },
+                addDependency(): void {},
+                resourcePath: resolvePath('test/unit/fixtures/index.twig'),
+                async: () => {
+                    return (error: Error | undefined, value: Buffer | string) => {
+                        test.true(error);
+
+                        test.end();
+                    }
+                }
+            };
+
+            loader.bind(loaderContext)('{{ bar }');
+        });
     });
 
     test.test('provides options validation', (test) => {
@@ -101,9 +138,14 @@ tape('loader', (test: Test) => {
             let errors: ValidationError[];
 
             try {
-                loader.bind({
-                    query: fixture.options
-                })();
+                const loaderContext: OptionObject = {
+                    query: fixture.options,
+                    addDependency(): void {},
+                    resourcePath: resolvePath('test/unit/fixtures/index.twig'),
+                    async: () => {}
+                };
+
+                loader.bind(loaderContext)();
 
                 errors = [];
             } catch (e) {
@@ -119,21 +161,30 @@ tape('loader', (test: Test) => {
     });
 
     test.test('anonymize template names when mode is set to "production"', (test) => {
-        let context: OptionObject = Object.assign({}, loaderContext, {
+        const loaderContext: OptionObject = {
+            query: {
+                environmentModulePath: resolvePath('test/unit/fixtures/environment.js')
+            },
+            addDependency(): void {},
+            resourcePath: resolvePath('test/unit/fixtures/index.twig'),
+            async: () => {
+                return (error: Error | undefined, value: string | Buffer) => {
+                    new Function('require', `module = { exports: null };
+
+${value}
+
+return template;`)(require).then((template: TwingTemplate) => {
+                        test.false(template.templateName.includes('test/unit/fixtures/index.twig'));
+
+                        test.end();
+                    });
+                };
+
+            },
             mode: 'production'
-        });
+        };
 
-        delete require.cache[context.query.environmentModulePath];
-
-        let template: TwingTemplate = new Function('require', `module = { exports: null };
-
-${loader.bind(context)('foo')}
-
-return template;`)(require);
-
-        test.false(template.getTemplateName().includes('test/unit/fixtures/index.twig'));
-
-        test.end();
+        loader.bind(loaderContext)('foo');
     });
 
     test.end();

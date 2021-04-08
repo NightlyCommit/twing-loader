@@ -16,21 +16,19 @@ const getEntryPath = (): string => {
 };
 
 tape('visitor', (test: Test) => {
-    const visit = (node: TwingNode, environment: TwingEnvironment = null): string[] => {
+    const visit = (node: TwingNode, environment: TwingEnvironment = null): Promise<string[]> => {
         const env = environment || new TwingEnvironment(new TwingLoaderRelativeFilesystem());
         const visitor = new Visitor(env.getLoader(), getEntryPath(), (name: string) => 'HASHED::' + name);
 
-        visitor.visit(node);
-
-        return visitor.foundTemplateNames;
+        return visitor.visit(node).then(() => visitor.foundTemplateNames);
     };
 
-    test.test('handles include function', (test: Test) => {
+    test.test('handles include function', async (test: Test) => {
         let node = new TwingNodeExpressionFunction('include', new TwingNode(new Map([
             [0, new TwingNodeExpressionConstant('./bar.twig', 1, 1)]
         ])), 1, 1);
 
-        test.same(visit(node), [
+        test.same(await visit(node), [
             resolvePath('test/unit/fixtures/bar.twig')
         ]);
 
@@ -43,7 +41,7 @@ tape('visitor', (test: Test) => {
             ]), 1, 1)]
         ])), 1, 1);
 
-        test.same(visit(node), [
+        test.same(await visit(node), [
             resolvePath('test/unit/fixtures/lorem.twig'),
             resolvePath('test/unit/fixtures/bar.twig')
         ]);
@@ -51,10 +49,10 @@ tape('visitor', (test: Test) => {
         test.end();
     });
 
-    test.test('handles import tag', (test: Test) => {
+    test.test('handles import tag', async (test: Test) => {
         let node = new TwingNodeImport(new TwingNodeExpressionConstant('./bar.twig', 1, 1), new TwingNode(), 1, 1);
 
-        test.same(visit(node), [
+        test.same(await visit(node), [
             resolvePath('test/unit/fixtures/bar.twig')
         ], 'template names are valid');
         test.same(node.getNode('expr').getAttribute('value'), 'HASHED::' + resolvePath('test/unit/fixtures/bar.twig'), 'expression path is resolved');
@@ -66,7 +64,7 @@ tape('visitor', (test: Test) => {
             ['3', new TwingNodeExpressionConstant('./lorem.twig', 1, 1)]
         ]), 1, 1), new TwingNode(), 1, 1);
 
-        test.same(visit(node), [
+        test.same(await visit(node), [
             resolvePath('test/unit/fixtures/bar.twig'),
             resolvePath('test/unit/fixtures/lorem.twig')
         ], 'template names are valid');
@@ -78,7 +76,7 @@ tape('visitor', (test: Test) => {
             1, 1
         ), new TwingNode(), 1, 1);
 
-        test.same(visit(node), [
+        test.same(await visit(node), [
             resolvePath('test/unit/fixtures/bar.twig'),
             resolvePath('test/unit/fixtures/lorem.twig')
         ], 'template names are valid');
@@ -88,10 +86,10 @@ tape('visitor', (test: Test) => {
         test.end();
     });
 
-    test.test('handles include tag', (test: Test) => {
+    test.test('handles include tag', async (test: Test) => {
         let node = new TwingNodeInclude(new TwingNodeExpressionConstant('./bar.twig', 1, 1), new TwingNode(), false, false, 1, 1);
 
-        test.same(visit(node), [
+        test.same(await visit(node), [
             resolvePath('test/unit/fixtures/bar.twig')
         ], 'template names are valid');
         test.same(node.getNode('expr').getAttribute('value'), 'HASHED::' + resolvePath('test/unit/fixtures/bar.twig'), 'expression path is resolved');
@@ -103,7 +101,7 @@ tape('visitor', (test: Test) => {
             ['3', new TwingNodeExpressionConstant('./lorem.twig', 1, 1)]
         ]), 1, 1), new TwingNode(), false, false, 1, 1);
 
-        test.same(visit(node), [
+        test.same(await visit(node), [
             resolvePath('test/unit/fixtures/bar.twig'),
             resolvePath('test/unit/fixtures/lorem.twig')
         ], 'template names are valid');
@@ -114,7 +112,7 @@ tape('visitor', (test: Test) => {
             new TwingNodeExpressionConstant('./lorem.twig', 1, 1),
             1, 1), new TwingNode(), false, false, 1, 1);
 
-        test.same(visit(node), [
+        test.same(await visit(node), [
             resolvePath('test/unit/fixtures/bar.twig'),
             resolvePath('test/unit/fixtures/lorem.twig')
         ], 'template names are valid');
@@ -124,21 +122,21 @@ tape('visitor', (test: Test) => {
         test.end();
     });
 
-    test.test('handles module with parent', (test: Test) => {
+    test.test('handles module with parent', async (test: Test) => {
         let node = new TwingNodeModule(new TwingNode(), new TwingNodeExpressionConstant('./bar.twig', 1, 1), new TwingNode(), new TwingNode(), new TwingNode(), [], new TwingSource('', 'foo', getEntryPath()));
 
-        test.same(visit(node), [resolvePath('test/unit/fixtures/bar.twig')], 'template names are valid');
+        test.same(await visit(node), [resolvePath('test/unit/fixtures/bar.twig')], 'template names are valid');
         test.same(node.getNode('parent').getAttribute('value'), 'HASHED::' + resolvePath('test/unit/fixtures/bar.twig'), 'expression path is resolved');
 
         test.end();
     });
 
-    test.test('ignore missing templates', (test: Test) => {
+    test.test('ignore missing templates', async (test: Test) => {
         let node = new TwingNodeExpressionFunction('include', new TwingNode(new Map([
             [0, new TwingNodeExpressionConstant('./bare.twig', 1, 1)]
         ])), 1, 1);
 
-        test.same(visit(node), []);
+        test.same(await visit(node), []);
 
         let environment = new TwingEnvironment(new TwingLoaderArray({
             bar: 'BAR'
@@ -148,12 +146,12 @@ tape('visitor', (test: Test) => {
             [0, new TwingNodeExpressionConstant('bar', 1, 1)]
         ])), 1, 1);
 
-        test.same(visit(node, environment), []);
+        test.same(await visit(node, environment), []);
 
         test.end();
     });
 
-    test.test('deduplicates templates', (test: Test) => {
+    test.test('deduplicates templates', async (test: Test) => {
         let node = new TwingNodeBody(new Map([
             [0, new TwingNodeExpressionFunction('include', new TwingNode(new Map([
                 [0, new TwingNodeExpressionConstant('./bar.twig', 1, 1)]
@@ -163,7 +161,7 @@ tape('visitor', (test: Test) => {
             ])), 1, 1)]
         ]));
 
-        test.same(visit(node), [
+        test.same(await visit(node), [
             resolvePath('test/unit/fixtures/bar.twig')
         ]);
 
