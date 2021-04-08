@@ -32,14 +32,16 @@ const optionsSchema = {
 };
 
 class PathSupportingArrayLoader extends TwingLoaderArray {
-    getSourceContext(name: string, from: TwingSource): TwingSource {
-        let source = super.getSourceContext(name, from);
-
-        return new TwingSource(source.getCode(), source.getName(), name);
+    getSourceContext(name: string, from: TwingSource): Promise<TwingSource> {
+        return super.getSourceContext(name, from).then((source) => {
+            return new TwingSource(source.getCode(), source.getName(), name);
+        });
     }
 }
 
 export default function (this: loader.LoaderContext, source: string) {
+    const callback = this.async();
+
     const getTemplateHash = (name: string) => {
         return this.mode !== 'production' ? name : hex.stringify(sha256(name));
     };
@@ -48,13 +50,15 @@ export default function (this: loader.LoaderContext, source: string) {
 
     validateOptions(optionsSchema, options, 'Twing loader');
 
+    delete require.cache[options.environmentModulePath];
+
     let resourcePath: string = slash(this.resourcePath);
     let environmentModulePath: string = options.environmentModulePath;
     let renderContext: any = options.renderContext;
 
     this.addDependency(slash(environmentModulePath));
 
-    // require takes module name separated wicth forward slashes
+    // require takes module name separated with forward slashes
     let environment: TwingEnvironment = require(slash(environmentModulePath));
     let loader = environment.getLoader();
 
@@ -71,11 +75,10 @@ export default function (this: loader.LoaderContext, source: string) {
 
         let visitor = new Visitor(loader, resourcePath, getTemplateHash);
 
-        visitor.visit(module);
+        visitor.visit(module).then(() => {
+            let precompiledTemplate = environment.compile(module);
 
-        let precompiledTemplate = environment.compile(module);
-
-        parts.push(`let templatesModule = (() => {
+            parts.push(`let templatesModule = (() => {
 let module = {
     exports: undefined
 };
@@ -86,21 +89,22 @@ ${precompiledTemplate}
 })();
 `);
 
-        for (let foundTemplateName of visitor.foundTemplateNames) {
-            // require takes module name separated with forward slashes
-            parts.push(`require('${slash(foundTemplateName)}');`);
-        }
+            for (let foundTemplateName of visitor.foundTemplateNames) {
+                // require takes module name separated with forward slashes
+                parts.push(`require('${slash(foundTemplateName)}');`);
+            }
 
-        parts.push(`env.registerTemplatesModule(templatesModule, '${key}');`);
+            parts.push(`env.registerTemplatesModule(templatesModule, '${key}');`);
 
-        parts.push(`
+            parts.push(`
 let template = env.loadTemplate('${key}');
 
 module.exports = (context = {}) => {
-    return template.render(context);
+    return template.then((template) => template.render(context));
 };`);
 
-        return parts.join('\n');
+            callback(null, parts.join('\n'));
+        });
     } else {
         environment.setLoader(new TwingLoaderChain([
             new PathSupportingArrayLoader(new Map([
@@ -109,10 +113,14 @@ module.exports = (context = {}) => {
             loader
         ]));
 
-        environment.on('template', (name: string, from: TwingSource) => {
-            this.addDependency(environment.getLoader().resolve(name, from));
+        environment.on('template', async (name: string, from: TwingSource) => {
+            this.addDependency(await environment.getLoader().resolve(name, from));
         });
 
-        return `module.exports = ${JSON.stringify(environment.render(resourcePath, renderContext))};`;
+        environment.render(resourcePath, renderContext).then((result) => {
+            callback(null, `module.exports = ${JSON.stringify(result)};`);
+        }).catch((error) => {
+            callback(error);
+        });
     }
 };

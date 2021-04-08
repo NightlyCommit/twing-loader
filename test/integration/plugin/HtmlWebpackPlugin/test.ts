@@ -44,12 +44,12 @@ class HtmlWebpackPluginTestCase extends TestCase {
 `;
     }
 
-    protected doTest(test: Test,  message: string, memoryFs: MemoryFileSystem): void {
-        super.doTest(test, message, memoryFs);
+    protected doTest(test: Test,  message: string, memoryFs: MemoryFileSystem): Promise<void> {
+        return super.doTest(test, message, memoryFs).then(() => {
+            let actual = memoryFs.readFileSync(resolvePath('dist/index.html'), 'UTF-8');
 
-        let actual = memoryFs.readFileSync(resolvePath('dist/index.html'), 'UTF-8');
-
-        test.same(actual, this.expectedFromPlugin, 'plugin output is valid');
+            test.same(actual, this.expectedFromPlugin, 'plugin output is valid');
+        });
     }
 }
 
