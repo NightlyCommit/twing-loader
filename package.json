@@ -10,8 +10,13 @@
     "test:integration": "npm run build && ts-node node_modules/tape/bin/tape 'test/integration/**/test.ts' | tap-bail | tap-spec",
     "cover": "rimraf .nyc_output coverage && nyc npm run test:unit",
     "coverage": "nyc report --reporter=text-lcov | coveralls",
-    "prepack": "npm run build"
+    "prepare": "npm run build"
   },
+  "files": [
+    "dist/",
+    "src/",
+    "README.md"
+  ],
   "keywords": [
     "twig",
     "twing",
