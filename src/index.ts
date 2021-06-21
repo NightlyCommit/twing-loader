@@ -1,5 +1,6 @@
-import {getOptions} from 'loader-utils';
-import {loader} from 'webpack';
+import { getOptions } from 'loader-utils';
+import { resolve } from 'path';
+import { loader } from 'webpack';
 import {
     TwingEnvironment,
     TwingLoaderArray,
@@ -7,7 +8,7 @@ import {
     TwingNodeModule,
     TwingSource, TwingTokenStream
 } from 'twing';
-import {Visitor} from "./visitor";
+import { Visitor } from "./visitor";
 
 const sha256 = require('crypto-js/sha256');
 const hex = require('crypto-js/enc-hex');
@@ -56,7 +57,7 @@ export default function (this: loader.LoaderContext, source: string) {
     let environmentModulePath: string = options.environmentModulePath;
     let renderContext: any = options.renderContext;
 
-    this.addDependency(slash(environmentModulePath));
+    this.addDependency(resolve(slash(environmentModulePath)));
 
     // require takes module name separated with forward slashes
     let environment: TwingEnvironment = require(slash(environmentModulePath));
@@ -114,7 +115,8 @@ module.exports = (context = {}) => {
         ]));
 
         environment.on('template', async (name: string, from: TwingSource) => {
-            this.addDependency(await environment.getLoader().resolve(name, from));
+            let sourceContext = await environment.getLoader().getSourceContext(name, from);
+            this.addDependency(resolve(sourceContext.getResolvedName()));
         });
 
         environment.render(resourcePath, renderContext).then((result) => {
