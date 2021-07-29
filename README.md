@@ -137,6 +137,7 @@ This second behavior, known as _render at compile time_, comes with the benefit 
 |---|:---:|:---:|:---:|---|
 |environmentModulePath|`true`|string|`undefined`| The absolute path or the identifier to the module that exports the `TwingEnvironment` instance that will be used by the loader to compile (and render) the templates at compile time and in the bundle to render them at runtime.|
 |renderContext|`false`|any|`undefined`|If different from `undefined`, enables the _render at compile time_ behavior and serves as context for the rendering of the templates.|
+|withHTMLComments|`false`|boolean|`undefined`|If `true`, templates will render surrounded by `<!-- START: [[resourcePath]] -->` and `<!-- END: [[resourcePath]] -->` HTML comments, where `[[resourcePath]]` is the absolute path of the Twig file in question.|
 
 ## Contributing
 
