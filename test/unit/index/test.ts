@@ -124,6 +124,17 @@ tape('loader', (test: Test) => {
             {
                 options: {
                     environmentModulePath: '',
+                    withHTMLComments: ''
+                },
+                expectation: {
+                    dataPath: '.withHTMLComments',
+                    keyword: 'type',
+                    message: 'should be boolean'
+                }
+            },
+            {
+                options: {
+                    environmentModulePath: '',
                     foo: ''
                 },
                 expectation: {

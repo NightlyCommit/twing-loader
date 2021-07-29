@@ -23,6 +23,9 @@ const optionsSchema = {
         },
         renderContext: {
             type: 'object'
+        },
+        withHTMLComments: {
+            type: 'boolean'
         }
     },
     required: [
@@ -55,6 +58,11 @@ export default function (this: loader.LoaderContext, source: string) {
     let resourcePath: string = slash(this.resourcePath);
     let environmentModulePath: string = options.environmentModulePath;
     let renderContext: any = options.renderContext;
+    let withHTMLComments: boolean = options.withHTMLComments;
+
+    if (withHTMLComments) {
+        source = `<!-- START: ${resourcePath} -->\n${source || ''}\n<!-- END: ${resourcePath} -->`;
+    }
 
     this.addDependency(slash(environmentModulePath));
 
