@@ -12,6 +12,7 @@ import {Visitor} from "./visitor";
 const sha256 = require('crypto-js/sha256');
 const hex = require('crypto-js/enc-hex');
 const slash = require('slash');
+const path = require('path');
 
 const validateOptions = require('schema-utils');
 
@@ -61,7 +62,8 @@ export default function (this: loader.LoaderContext, source: string) {
     let withHTMLComments: boolean = options.withHTMLComments;
 
     if (withHTMLComments) {
-        source = `<!-- START: ${resourcePath} -->\n${source || ''}\n<!-- END: ${resourcePath} -->`;
+        const relativePath = path.relative(process.cwd(), resourcePath);
+        source = `<!-- START: ${relativePath} -->\n${source || ''}\n<!-- END: ${relativePath} -->`;
     }
 
     this.addDependency(slash(environmentModulePath));
