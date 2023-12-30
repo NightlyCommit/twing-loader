@@ -75,6 +75,11 @@ export class Visitor {
             await processExpressionNode(node.getNode('arguments').getNode(0));
         }
 
+        // source function
+        if ((node instanceof TwingNodeExpressionFunction) && (node.getAttribute('name') === 'source')) {
+            await processExpressionNode(node.getNode('arguments').getNode(0));
+        }
+
         // import and include tags
         if ((node instanceof TwingNodeImport) || (node instanceof TwingNodeInclude)) {
             if (node.hasNode('expr')) {

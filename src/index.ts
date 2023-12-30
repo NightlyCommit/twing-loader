@@ -114,7 +114,7 @@ module.exports = (context = {}) => {
         ]));
 
         environment.on('template', async (name: string, from: TwingSource) => {
-            this.addDependency(await environment.getLoader().resolve(name, from));
+            this.addDependency(await environment.getLoader().resolve(name, from, false));
         });
 
         environment.render(resourcePath, renderContext).then((result) => {

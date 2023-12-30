@@ -1,0 +1,5 @@
+{{ source(foo ? './foo.twig' : './bar.twig') }}
+{{ source(foo ? './foo.twig' : not foo ? 'foo-2.twig' : './bar.twig') }}
+===
+{{ source(bar ? './foo.twig' : './bar.twig') }}
+{{ source(bar ? './foo.twig' : not bar ? 'foo-2.twig' : './bar.twig') }}
