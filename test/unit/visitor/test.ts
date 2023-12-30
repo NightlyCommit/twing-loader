@@ -49,6 +49,18 @@ tape('visitor', (test: Test) => {
         test.end();
     });
 
+    test.test('handles source function', async (test: Test) => {
+        let node = new TwingNodeExpressionFunction('source', new TwingNode(new Map([
+            [0, new TwingNodeExpressionConstant('./bar.twig', 1, 1)]
+        ])), 1, 1);
+
+        test.same(await visit(node), [
+            resolvePath('test/unit/fixtures/bar.twig')
+        ]);
+
+        test.end();
+    });
+
     test.test('handles import tag', async (test: Test) => {
         let node = new TwingNodeImport(new TwingNodeExpressionConstant('./bar.twig', 1, 1), new TwingNode(), 1, 1);
 
