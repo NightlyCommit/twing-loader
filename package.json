@@ -1,6 +1,6 @@
 {
   "name": "twing-loader",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "main": "dist/index.js",
   "scripts": {
     "build": "npm run clean && tsc",
